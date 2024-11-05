@@ -8,6 +8,7 @@ import { IVariablesInterface } from '../interfaces/IVariablesInterface';
 import { DashboardQueriesModule } from '../module/DashboardQueriesModule';
 import { CreateVariable, GetCountQueriesVariablesType, ValidateVariable } from '../types/VariablesTypes';
 import { In, Repository } from 'typeorm';
+import { transformObject } from '../helpers/TransformObject';
 
 @Injectable()
 export class VariablesService implements IVariablesInterface {
@@ -29,7 +30,7 @@ export class VariablesService implements IVariablesInterface {
     const sql = replaceFunctionCall(query, [...(params || [])]);
     const constResult = await this.repository.query(sql);
 
-    if (!constResult || constResult.length === 0 || !constResult[0].value) throw new Error('Unable to obtain count.');
+    if (!constResult || constResult.length === 0 || !constResult[0].value) return 0;
 
     return Number(constResult[0].value);
   }
@@ -74,9 +75,9 @@ export class VariablesService implements IVariablesInterface {
       const operation = math.compile(calc.operation);
       const queries = Object.values(calc.queries);
 
-      const parsedParams: Array<GetCountQueriesVariablesType> = Object.entries(queries).map(([key, value]) => ({
+      const parsedParams: Array<GetCountQueriesVariablesType> = queries.map((value) => ({
         id: value.id as any,
-        searchId: key,
+        searchId: value.operator as any,
         params: value.params as any,
       }));
 
@@ -91,7 +92,8 @@ export class VariablesService implements IVariablesInterface {
 
       try {
         const totalValue = operation.evaluate(scope);
-        return { searchId: calc.searchId, value: result, total: totalValue };
+        const response = transformObject([...result]);
+        return { value: response, total: totalValue };
       } catch (error) {
         return { searchId: calc.searchId, count: error.message };
       }
