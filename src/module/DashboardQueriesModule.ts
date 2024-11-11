@@ -6,6 +6,11 @@ import { VariablesService } from '../services/VariablesService';
 import { DataSource, DataSourceOptions } from 'typeorm';
 import { DecoratorConfig } from '../types/types';
 import { Logger } from '@duaneoli/base-project-nest';
+import { DashboardEntity } from '../entities/DashboardEntity';
+import { DashboardCacheEntity } from '../entities/DashboardCacheEntity';
+import { GraphicEntity } from '../entities/GraphicEntity';
+import { DashboardService } from '../services/DashboardService';
+import { GraphicService } from '../services/GraphicService';
 
 @Global()
 @Module({})
@@ -15,8 +20,8 @@ export class DashboardQueriesModule {
   static forRoot(database: DataSourceOptions, config?: DecoratorConfig): DynamicModule {
     this.config = config;
     if (!this.config.secondarySecret) this.config.secondarySecret = this.config.secret + 'secondary';
-    const entities = [VariablesEntity];
-    const services = [VariablesService];
+    const entities = [VariablesEntity, DashboardEntity, DashboardCacheEntity, GraphicEntity];
+    const services = [VariablesService, DashboardService, GraphicService];
     const imports = [];
     const exports = [...services];
     const providers = [...services];
