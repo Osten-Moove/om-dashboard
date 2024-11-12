@@ -9,18 +9,22 @@ export type CreateVariable = {
   isActive?: boolean;
 };
 
-export type ValidateVariable = {
-  searchId: string;
-  operation: string;
-  queries?: Array<{
-    operator: string;
-    id: string;
-    params?: Array<string>;
-  }>;
+export type UpdateVariablesType = {
+  id: string;
+  alias: string;
+  query: string;
+  description: string;
+  unitOfMeasure: UnitMeasureEnum;
+  isActive: boolean;
 };
 
-export type GetCountQueriesVariablesType = {
+export type VariableType = {
   id: string;
-  searchId: string;
-  params: string;
+  params: Array<string>;
+};
+
+export type OperationType = {
+  identify: string;
+  operation: string;
+  variables: Record<string, VariableType>;
 };
