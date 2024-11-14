@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { FindOneOptions, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { DashboardEntity } from '../entities/DashboardEntity';
 import { DashboardCacheEntity } from '../entities/DashboardCacheEntity';
 import { GraphicService } from './GraphicService';
@@ -102,9 +102,5 @@ export class DashboardService {
     const updateDashboard = await this.dashboardRepository.save(dashboardExists);
 
     return new ServiceDTO([updateDashboard]);
-  }
-
-  async findOne(options: FindOneOptions<DashboardEntity>) {
-    return this.dashboardRepository.findOne(options);
   }
 }
