@@ -59,15 +59,15 @@ export class DashboardService {
   }
 
   async searchDashboard(id: string, params: Array<string>, refresh: boolean = false) {
-    const dashboardExists = await this.dashboardRepository.findOne({
+    const findDashboard = await this.dashboardRepository.findOne({
       where: { id },
     });
 
-    if (!dashboardExists) throw Error('Dashboard not found.');
+    if (!findDashboard) throw Error('Dashboard not found.');
 
     if (!refresh) {
       const cache = await this.dashboardCacheRepository.findOne({
-        where: { dashboard: { id: dashboardExists.id }, params: createUniqueHash(params) },
+        where: { dashboard: { id: findDashboard.id }, params: createUniqueHash(params) },
       });
 
       if (cache) {
