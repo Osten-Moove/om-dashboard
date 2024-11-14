@@ -7,6 +7,7 @@ import { ExceptionDTO, ServiceDTO } from '@duaneoli/base-project-nest';
 import { CreateDashboardType, UpdateDashboardType } from '../types/DashboardTypes';
 import { createUniqueHash } from '../helpers/CreateHash';
 import { InjectRepository } from '@nestjs/typeorm';
+import { GraphicEntity } from '../entities';
 
 @Injectable()
 export class DashboardService {
@@ -15,6 +16,8 @@ export class DashboardService {
     private readonly dashboardRepository: Repository<DashboardEntity>,
     @InjectRepository(DashboardCacheEntity)
     private readonly dashboardCacheRepository: Repository<DashboardCacheEntity>,
+    @InjectRepository(GraphicEntity)
+    private readonly graphicRepository: Repository<GraphicEntity>,
   ) {}
 
   async create({ title, description = null, period }: CreateDashboardType) {
@@ -35,7 +38,7 @@ export class DashboardService {
 
   async updateCache(dashboardId: string, params: Array<string>) {
     try {
-      const graphicService = new GraphicService();
+      const graphicService = new GraphicService(this.dashboardRepository, this.graphicRepository);
       const cache = await graphicService.generateMultipleGraphs(dashboardId, params);
 
       const cacheExists = await this.dashboardCacheRepository.findOne({
@@ -64,7 +67,6 @@ export class DashboardService {
     });
 
     if (!findDashboard) throw Error('Dashboard not found.');
-
     if (!refresh) {
       const cache = await this.dashboardCacheRepository.findOne({
         where: { dashboard: { id: findDashboard.id }, params: createUniqueHash(params) },

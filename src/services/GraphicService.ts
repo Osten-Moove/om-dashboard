@@ -1,21 +1,21 @@
 import { Injectable } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { GraphicEntity } from '../entities/GraphicEntity';
-import { DashboardQueriesModule } from '../module/DashboardQueriesModule';
 import { DashboardEntity } from '../entities/DashboardEntity';
 import { VariablesService } from './VariablesService';
 import { CreateGraphicType, DeleteGraphicType, UpdateGraphicType } from '../types/GraphicTypes';
 import { ServiceDTO } from '@duaneoli/base-project-nest';
 import { all, create } from 'mathjs';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class GraphicService {
-  private graphicRepository: Repository<GraphicEntity>;
-  private dashboardRepository: Repository<DashboardEntity>;
-  constructor() {
-    this.graphicRepository = DashboardQueriesModule.connection.getRepository(GraphicEntity);
-    this.dashboardRepository = DashboardQueriesModule.connection.getRepository(DashboardEntity);
-  }
+  constructor(
+    @InjectRepository(DashboardEntity)
+    private readonly dashboardRepository: Repository<DashboardEntity>,
+    @InjectRepository(GraphicEntity)
+    private readonly graphicRepository: Repository<GraphicEntity>,
+  ) {}
 
   async create(dashboardId: string, { title, type, metrics, dataFunctions }: CreateGraphicType) {
     const dashboardExists = await this.dashboardRepository.findOne({
@@ -135,10 +135,7 @@ export class GraphicService {
 
     const graphsWithUnitsInserted = graphs.map((graph) => {
       const listQueries = JSON.stringify(graph.dataFunctions);
-      const replaceVariablesWithUnitsIds = params.reduce((acc, it, index) => {
-        acc = acc.replaceAll(`$${index + 1}`, it);
-        return acc;
-      }, listQueries);
+      const replaceVariablesWithUnitsIds = listQueries.replaceAll(`$1`, params[0]);
 
       Object.assign(graph, { dataFunctions: JSON.parse(replaceVariablesWithUnitsIds) });
 

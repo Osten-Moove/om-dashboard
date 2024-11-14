@@ -7,12 +7,7 @@ import { replaceFunctionCall } from '../helpers/query';
 import { DashboardQueriesModule } from '../module/DashboardQueriesModule';
 import { CreateVariable, OperationType, UpdateVariablesType, VariableType } from '../types/VariablesTypes';
 import { In, Repository } from 'typeorm';
-import * as crypto from 'crypto';
-
-function createUniqueHash(params: Array<string>) {
-  const hashParams = params.join(',');
-  return crypto.createHash('sha256').update(hashParams).digest('hex');
-}
+import { createUniqueHash } from '../helpers';
 
 @Injectable()
 export class VariablesService {
@@ -79,7 +74,6 @@ export class VariablesService {
 
     operations.forEach((operation) => {
       const newOperation = { ...operation, variables: {} };
-      console.log(operation);
       Object.entries(operation.variables).forEach(([key, value]) => {
         const hash = value.id + createUniqueHash(value.params);
         newOperation.variables[key] = hash;
