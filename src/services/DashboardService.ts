@@ -1,28 +1,28 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { Injectable } from '@nestjs/common';
+import { FindOneOptions, Repository } from 'typeorm';
 import { DashboardEntity } from '../entities/DashboardEntity';
 import { DashboardCacheEntity } from '../entities/DashboardCacheEntity';
-import { DashboardQueriesModule } from '../module/DashboardQueriesModule';
 import { GraphicService } from './GraphicService';
 import { ExceptionDTO, ServiceDTO } from '@duaneoli/base-project-nest';
 import { CreateDashboardType, UpdateDashboardType } from '../types/DashboardTypes';
 import { createUniqueHash } from '../helpers/CreateHash';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class DashboardService {
-  private dashboardRepository: Repository<DashboardEntity>;
-  private dashboardCacheRepository: Repository<DashboardCacheEntity>;
-  constructor(@Inject(GraphicService) private readonly graphicService: GraphicService) {
-    this.dashboardRepository = DashboardQueriesModule.connection.getRepository(DashboardEntity);
-    this.dashboardCacheRepository = DashboardQueriesModule.connection.getRepository(DashboardCacheEntity);
-  }
+  constructor(
+    @InjectRepository(DashboardEntity)
+    private readonly dashboardRepository: Repository<DashboardEntity>,
+    @InjectRepository(DashboardCacheEntity)
+    private readonly dashboardCacheRepository: Repository<DashboardCacheEntity>,
+  ) {}
 
   async create({ title, description = null, period }: CreateDashboardType) {
-    const dashboardAlreadyExists = await this.dashboardRepository.findOne({
+    const findDashboard = await this.dashboardRepository.find({
       where: { title },
     });
 
-    if (dashboardAlreadyExists) throw Error('Dashboard already exists.');
+    if (findDashboard && findDashboard.length > 0) throw Error('Dashboard already exists.');
 
     const create = await this.dashboardRepository.save({
       title,
@@ -35,7 +35,8 @@ export class DashboardService {
 
   async updateCache(dashboardId: string, params: Array<string>) {
     try {
-      const cache = await this.graphicService.generateMultipleGraphs(dashboardId, params);
+      const graphicService = new GraphicService();
+      const cache = await graphicService.generateMultipleGraphs(dashboardId, params);
 
       const cacheExists = await this.dashboardCacheRepository.findOne({
         where: { dashboard: { id: dashboardId }, params: createUniqueHash(params) },
@@ -99,5 +100,9 @@ export class DashboardService {
     const updateDashboard = await this.dashboardRepository.save(dashboardExists);
 
     return new ServiceDTO([updateDashboard]);
+  }
+
+  async findOne(options: FindOneOptions<DashboardEntity>) {
+    return this.dashboardRepository.findOne(options);
   }
 }

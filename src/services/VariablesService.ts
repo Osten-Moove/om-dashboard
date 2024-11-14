@@ -7,7 +7,7 @@ import { replaceFunctionCall } from '../helpers/query';
 import { DashboardQueriesModule } from '../module/DashboardQueriesModule';
 import { CreateVariable, OperationType, UpdateVariablesType, VariableType } from '../types/VariablesTypes';
 import { In, Repository } from 'typeorm';
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 
 function createUniqueHash(params: Array<string>) {
   const hashParams = params.join(',');
@@ -32,7 +32,7 @@ export class VariablesService {
 
   async update(data: Array<UpdateVariablesType>) {
     const variablesInDatabase = await this.repository.find({ where: { id: In(data.map((it) => it.id)) } });
-    const [process, reject] = filterSeparate(data, () => variablesInDatabase.some((it) => it.id === it.id));
+    const [process] = filterSeparate(data, () => variablesInDatabase.some((it) => it.id === it.id));
 
     const saveEntities = await this.repository.save(process);
     return new ServiceDTO(saveEntities);
@@ -79,6 +79,7 @@ export class VariablesService {
 
     operations.forEach((operation) => {
       const newOperation = { ...operation, variables: {} };
+      console.log(operation);
       Object.entries(operation.variables).forEach(([key, value]) => {
         const hash = value.id + createUniqueHash(value.params);
         newOperation.variables[key] = hash;

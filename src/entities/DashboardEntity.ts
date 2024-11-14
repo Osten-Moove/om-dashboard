@@ -1,8 +1,8 @@
 import {
+  BeforeInsert,
   Column,
   CreateDateColumn,
   Entity,
-  JoinColumn,
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -10,6 +10,7 @@ import {
 
 import { GraphicEntity } from './GraphicEntity';
 import { DashboardCacheEntity } from './DashboardCacheEntity';
+import { Logger } from '@duaneoli/base-project-nest';
 
 export enum DashboardPeriod {
   '7D' = '7D',
@@ -44,6 +45,18 @@ export class DashboardEntity {
   graphics?: GraphicEntity[];
 
   @OneToMany(() => DashboardCacheEntity, (dashboardCacheEntity) => dashboardCacheEntity.dashboard, { cascade: true })
-  @JoinColumn({ name: 'dashboard_cache_id' })
   dashboardCache?: Array<DashboardCacheEntity>;
+
+  constructor(entity?: { id: string; title: string; description: string; period: DashboardPeriod }) {
+    if (!entity) return;
+    if (entity.id) this.id = entity.id;
+    if (entity.title) this.title = entity.title;
+    if (entity.description) this.description = entity.description;
+    if (entity.period) this.period = entity.period;
+  }
+
+  @BeforeInsert()
+  beforeInsert() {
+    Logger.debug('Oi');
+  }
 }

@@ -11,6 +11,7 @@ import { DashboardCacheEntity } from '../entities/DashboardCacheEntity';
 import { GraphicEntity } from '../entities/GraphicEntity';
 import { DashboardService } from '../services/DashboardService';
 import { GraphicService } from '../services/GraphicService';
+import { TypeOrmModule } from '@nestjs/typeorm';
 
 @Global()
 @Module({})
@@ -22,7 +23,6 @@ export class DashboardQueriesModule {
     if (!this.config.secondarySecret) this.config.secondarySecret = this.config.secret + 'secondary';
     const entities = [VariablesEntity, DashboardEntity, DashboardCacheEntity, GraphicEntity];
     const services = [VariablesService, DashboardService, GraphicService];
-    const imports = [];
     const exports = [...services];
     const providers = [...services];
 
@@ -38,7 +38,15 @@ export class DashboardQueriesModule {
     return {
       global: true,
       module: DashboardQueriesModule,
-      imports,
+      imports: [
+        TypeOrmModule.forRoot({
+          ...database,
+          entities,
+          name: AuthorizationLibDefaultOwner,
+          synchronize: false,
+        }),
+        TypeOrmModule.forFeature([DashboardEntity, DashboardCacheEntity, GraphicEntity]),
+      ],
       providers,
       exports,
     };

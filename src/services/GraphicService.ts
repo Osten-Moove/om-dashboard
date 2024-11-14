@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { GraphicEntity } from '../entities/GraphicEntity';
 import { DashboardQueriesModule } from '../module/DashboardQueriesModule';
@@ -12,7 +12,7 @@ import { all, create } from 'mathjs';
 export class GraphicService {
   private graphicRepository: Repository<GraphicEntity>;
   private dashboardRepository: Repository<DashboardEntity>;
-  constructor(@Inject(VariablesService) private readonly variablesService: VariablesService) {
+  constructor() {
     this.graphicRepository = DashboardQueriesModule.connection.getRepository(GraphicEntity);
     this.dashboardRepository = DashboardQueriesModule.connection.getRepository(DashboardEntity);
   }
@@ -107,8 +107,8 @@ export class GraphicService {
 
       return structureReturn;
     });
-
-    const calculationResults = await this.variablesService.operationCalcVariables(convertVariablesToArray);
+    const variableService = new VariablesService();
+    const calculationResults = await variableService.operationCalcVariables(convertVariablesToArray);
 
     const scopeVariables = calculationResults.reduce((acc, entity) => {
       acc[entity.identify] = entity.result;
