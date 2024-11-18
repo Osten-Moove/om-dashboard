@@ -38,7 +38,7 @@ export class VariablesService {
     const countResult = await this.repository.query(sql);
 
     if (!countResult || countResult.length === 0 || !countResult[0].value)
-      throw ExceptionDTO.warn('Não foi possível obter a contagem.', 'Verify if sql return column value');
+      return null;
     return Number(countResult[0].value);
   }
 
