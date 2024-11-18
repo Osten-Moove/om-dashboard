@@ -39,7 +39,6 @@ export class VariablesService {
 
     if (!countResult || countResult.length === 0 || !countResult[0].value)
       throw ExceptionDTO.warn('Não foi possível obter a contagem.', 'Verify if sql return column value');
-
     return Number(countResult[0].value);
   }
 
@@ -86,6 +85,7 @@ export class VariablesService {
       const entity = entities.find((e) => String(e.id) === String(variable.id));
       const params = [...(Array.isArray(variable.params) ? variable.params : [])];
       const result = await this.execute(entity.query, params);
+
       return {
         hash,
         value: result,

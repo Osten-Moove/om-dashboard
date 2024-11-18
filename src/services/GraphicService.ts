@@ -107,6 +107,7 @@ export class GraphicService {
 
       return structureReturn;
     });
+
     const variableService = new VariablesService();
     const calculationResults = await variableService.operationCalcVariables(convertVariablesToArray);
 
@@ -130,15 +131,26 @@ export class GraphicService {
     return { title: graph.title, type: graph.type, data: graphData.dataFunctions.data };
   }
 
+  private replaceVariablesWithParams(listQueries: string, params: Array<string>) {
+    let replacedString = listQueries;
+
+    params
+      .join(',')
+      .split(',')
+      .forEach((param) => {
+        replacedString = replacedString.replace('$', param.trim());
+      });
+
+    return replacedString;
+  }
+
   async generateMultipleGraphs(dashboardId: string, params: Array<string>) {
     const graphs = await this.graphicRepository.find({ where: { dashboard: { id: dashboardId } } });
 
     const graphsWithUnitsInserted = graphs.map((graph) => {
       const listQueries = JSON.stringify(graph.dataFunctions);
-      const replaceVariablesWithUnitsIds = listQueries.replaceAll(`$1`, params[0]);
-
+      const replaceVariablesWithUnitsIds = this.replaceVariablesWithParams(listQueries, params);
       Object.assign(graph, { dataFunctions: JSON.parse(replaceVariablesWithUnitsIds) });
-
       return graph;
     });
 
