@@ -25,6 +25,10 @@ export class VariablesService {
     }
   }
 
+  async list() {
+    return new ServiceDTO(await this.repository.find());
+  }
+
   async update(data: Array<UpdateVariablesType>) {
     const variablesInDatabase = await this.repository.find({ where: { id: In(data.map((it) => it.id)) } });
     const [process] = filterSeparate(data, () => variablesInDatabase.some((it) => it.id === it.id));
@@ -37,8 +41,7 @@ export class VariablesService {
     const sql = replaceFunctionCall(query, [...(params || [])]);
     const countResult = await this.repository.query(sql);
 
-    if (!countResult || countResult.length === 0 || !countResult[0].value)
-      return null;
+    if (!countResult || countResult.length === 0 || !countResult[0].value) return null;
     return Number(countResult[0].value);
   }
 
