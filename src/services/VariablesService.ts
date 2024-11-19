@@ -7,12 +7,7 @@ import { replaceFunctionCall } from '../helpers/query';
 import { DashboardQueriesModule } from '../module/DashboardQueriesModule';
 import { CreateVariable, OperationType, UpdateVariablesType, VariableType } from '../types/VariablesTypes';
 import { In, Repository } from 'typeorm';
-import crypto from 'crypto';
-
-function createUniqueHash(params: Array<string>) {
-  const hashParams = params.join(',');
-  return crypto.createHash('sha256').update(hashParams).digest('hex');
-}
+import { createUniqueHash } from '../helpers';
 
 @Injectable()
 export class VariablesService {
@@ -30,9 +25,13 @@ export class VariablesService {
     }
   }
 
+  async list() {
+    return new ServiceDTO(await this.repository.find());
+  }
+
   async update(data: Array<UpdateVariablesType>) {
     const variablesInDatabase = await this.repository.find({ where: { id: In(data.map((it) => it.id)) } });
-    const [process, reject] = filterSeparate(data, () => variablesInDatabase.some((it) => it.id === it.id));
+    const [process] = filterSeparate(data, () => variablesInDatabase.some((it) => it.id === it.id));
 
     const saveEntities = await this.repository.save(process);
     return new ServiceDTO(saveEntities);
@@ -42,9 +41,7 @@ export class VariablesService {
     const sql = replaceFunctionCall(query, [...(params || [])]);
     const countResult = await this.repository.query(sql);
 
-    if (!countResult || countResult.length === 0 || !countResult[0].value)
-      throw ExceptionDTO.warn('Não foi possível obter a contagem.', 'Verify if sql return column value');
-
+    if (!countResult || countResult.length === 0 || !countResult[0].value) return null;
     return Number(countResult[0].value);
   }
 
@@ -91,6 +88,7 @@ export class VariablesService {
       const entity = entities.find((e) => String(e.id) === String(variable.id));
       const params = [...(Array.isArray(variable.params) ? variable.params : [])];
       const result = await this.execute(entity.query, params);
+
       return {
         hash,
         value: result,
