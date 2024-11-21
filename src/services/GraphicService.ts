@@ -1,21 +1,21 @@
-import { Injectable } from '@nestjs/common';
-import { Repository } from 'typeorm';
-import { GraphicEntity } from '../entities/GraphicEntity';
-import { DashboardEntity } from '../entities/DashboardEntity';
-import { VariablesService } from './VariablesService';
-import { CreateGraphicType, DeleteGraphicType, UpdateGraphicType } from '../types/GraphicTypes';
 import { ServiceDTO } from '@duaneoli/base-project-nest';
+import { Injectable } from '@nestjs/common';
 import { all, create } from 'mathjs';
-import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { DashboardEntity, GraphicEntity } from '../entities';
+import { DashboardQueriesModule } from '../module/DashboardQueriesModule';
+import { CreateGraphicType, DeleteGraphicType, UpdateGraphicType } from '../types/GraphicTypes';
+import { VariablesService } from './VariablesService';
 
 @Injectable()
 export class GraphicService {
-  constructor(
-    @InjectRepository(DashboardEntity)
-    private readonly dashboardRepository: Repository<DashboardEntity>,
-    @InjectRepository(GraphicEntity)
-    private readonly graphicRepository: Repository<GraphicEntity>,
-  ) {}
+  private graphicRepository: Repository<GraphicEntity>;
+  private dashboardRepository: Repository<DashboardEntity>;
+
+  constructor() {
+    this.graphicRepository = DashboardQueriesModule.connection.getRepository(GraphicEntity);
+    this.dashboardRepository = DashboardQueriesModule.connection.getRepository(DashboardEntity);
+  }
 
   async create(dashboardId: string, { title, type, metrics, dataFunctions }: CreateGraphicType) {
     const dashboardExists = await this.dashboardRepository.findOne({

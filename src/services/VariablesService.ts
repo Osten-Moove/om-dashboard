@@ -1,13 +1,13 @@
 import { ExceptionDTO, filterSeparate, RejectedInputDTO, ServiceDTO } from '@duaneoli/base-project-nest';
 import { Injectable } from '@nestjs/common';
 import { all, create } from 'mathjs';
+import { In, Repository } from 'typeorm';
 import { VariablesEntity } from '../entities/VariablesEntity';
 import { ErrorCodeEnum } from '../enums/ErrorCodeEnum';
+import { createUniqueHash } from '../helpers/CreateHash';
 import { replaceFunctionCall } from '../helpers/query';
 import { DashboardQueriesModule } from '../module/DashboardQueriesModule';
 import { CreateVariable, OperationType, UpdateVariablesType, VariableType } from '../types/VariablesTypes';
-import { In, Repository } from 'typeorm';
-import { createUniqueHash } from '../helpers';
 
 @Injectable()
 export class VariablesService {

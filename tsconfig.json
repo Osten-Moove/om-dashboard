@@ -10,13 +10,17 @@
     "outDir": "dist",
     "moduleResolution": "node",
     "strict": false,
+    "lib": ["ES2019", "DOM", "ES6", "DOM.Iterable", "ScriptHost", "ESNext"],
     "incremental": true,
     "skipLibCheck": true,
     "strictNullChecks": false,
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": false,
-    "noFallthroughCasesInSwitch": false
+    "noFallthroughCasesInSwitch": false,
+    "baseUrl": "./",
+    "typeRoots": ["node_modules/@types"],
+    "esModuleInterop": true
   },
-  "include": ["src"]
+  "include": ["src/**/*"]
 }
