@@ -106,7 +106,10 @@ export class VariablesService {
       Object.entries(operation.variables).forEach(([key, hash]) => {
         operation.variables[key] = hashToValue[hash];
       });
-      operation.result = math.compile(operation.operation).evaluate(operation.variables);
+
+      operation.result = Object.values(operation.variables).some((value) => value === null)
+        ? NaN
+        : math.compile(operation.operation).evaluate(operation.variables);
     });
 
     return newOperations;
