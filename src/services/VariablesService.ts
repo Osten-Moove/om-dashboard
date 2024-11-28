@@ -1,5 +1,7 @@
 import { ExceptionDTO, filterSeparate, RejectedInputDTO, ServiceDTO } from '@duaneoli/base-project-nest';
 import { Injectable } from '@nestjs/common';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
 import { all, create } from 'mathjs';
 import { In, Repository } from 'typeorm';
 import { VariablesEntity } from '../entities/VariablesEntity';
@@ -9,12 +11,47 @@ import { replaceFunctionCall } from '../helpers/query';
 import { DashboardQueriesModule } from '../module/DashboardQueriesModule';
 import { CreateVariable, OperationType, UpdateVariablesType, VariableType } from '../types/VariablesTypes';
 
+dayjs.extend(utc);
+
 @Injectable()
 export class VariablesService {
   private repository: Repository<VariablesEntity>;
+  private queries = {
+    selectIFexists: (id: string, params: Array<string>) =>
+      `SELECT 1 FROM variable_cache WHERE variable_id = '${id}' and params = '${createUniqueHash(params)}' and updated_at > '${dayjs().utc().subtract(DashboardQueriesModule.config.variableCacheMinutes, 'minutes').format('YYYY-MM-DD HH:mm:ss')}'`,
+    selectValueOfCache: (id: string, params: Array<string>) =>
+      `SELECT value::numeric FROM variable_cache WHERE variable_id = '${id}' and params = '${createUniqueHash(params)}'`,
+    case: (id: string, query: string, params: Array<string>) =>
+      `SELECT CASE WHEN EXISTS (${this.queries.selectIFexists(id, params)}) THEN (${this.queries.selectValueOfCache(id, params)}) ELSE (${query}) END AS value`,
+  };
 
   constructor() {
     this.repository = DashboardQueriesModule.connection.getRepository(VariablesEntity);
+  }
+
+  private async cacheVariable(variableEntity: VariablesEntity, params: Array<string>, refresh: boolean = false) {
+    const sql = `
+                  WITH computed_value AS (
+                    ${refresh ? variableEntity.query : this.queries.case(variableEntity.id, variableEntity.query, params)}
+                  ),
+                  upsert_cache AS (
+                  INSERT INTO variable_cache (variable_id,params, value)
+                  SELECT 
+                  '${variableEntity.id}' AS variable_id,
+                  '${createUniqueHash(params)}' AS params,
+                  value AS value
+                  FROM computed_value
+                  ${refresh ? '' : `WHERE NOT EXISTS (${this.queries.selectIFexists(variableEntity.id, params)})`}
+                  ON CONFLICT (variable_id, params) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP 
+                  RETURNING value
+                  )
+                  SELECT value FROM computed_value;
+                `;
+    try {
+      return await this.execute(sql, params);
+    } catch (error) {
+      throw ExceptionDTO.warn(error.message, 'Query failed, query executed: ' + error.query);
+    }
   }
 
   async create(data: CreateVariable): Promise<VariablesEntity | ErrorCodeEnum> {
@@ -56,7 +93,7 @@ export class VariablesService {
     }
   }
 
-  async operationCalcVariables(operations: Array<OperationType>) {
+  async operationCalcVariables(operations: Array<OperationType>, refresh: boolean = false) {
     const rejectedInputs = new Array<RejectedInputDTO>();
     const variablesId = operations.flatMap((it) => Object.values(it.variables).map((itt) => itt.id));
     const entities = await this.repository.find({ where: { id: In(variablesId) } });
@@ -87,7 +124,7 @@ export class VariablesService {
     const variablePromises = Object.entries(variablesToPromise).map(async ([hash, variable]) => {
       const entity = entities.find((e) => String(e.id) === String(variable.id));
       const params = [...(Array.isArray(variable.params) ? variable.params : [])];
-      const result = await this.execute(entity.query, params);
+      const result = await this.cacheVariable(entity, params, refresh);
 
       return {
         hash,

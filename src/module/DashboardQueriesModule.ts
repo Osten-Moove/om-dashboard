@@ -16,9 +16,9 @@ import { DecoratorConfig } from '../types/types';
 @Module({})
 export class DashboardQueriesModule {
   static connection: DataSource;
-  static config: DecoratorConfig;
+  static config: DecoratorConfig = { variableCacheMinutes: 30, debug: false };
   static forRoot(database: DataSourceOptions, config?: DecoratorConfig): DynamicModule {
-    this.config = config;
+    this.config = { ...this.config, ...config };
     const entities = [VariablesEntity, DashboardEntity, DashboardCacheEntity, GraphicEntity];
     const services = [VariablesService, DashboardService, GraphicService];
     const exports = [...services];
@@ -30,7 +30,6 @@ export class DashboardQueriesModule {
       name: AuthorizationLibDefaultOwner,
     });
 
-    if (!this.config.appName) this.config.appName = 'OM-DASHBOARD-QUERIES';
     if (this.config.debug) Logger.debug('DashboardQueriesModule Initialized');
 
     return {
